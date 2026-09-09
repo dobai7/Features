@@ -12,114 +12,240 @@ A reusable, step-by-step guide to add "Sign in with Google" to a MERN backend. C
 
 ---
 
-## Part 1: Google OAuth 2.0 Credentials Setup
+## 🚀 Part 1 — Google Cloud Console Setup
 
-### Prerequisites
+Before writing a single line of code, you need to create OAuth credentials from **Google Cloud Console**. These credentials allow your backend to communicate securely with Google's OAuth servers.
 
-Before starting, make sure you have:
+---
 
-- **Node.js** installed on your machine
-- A **Google account** to create OAuth credentials
-- Your existing backend (Express + JWT) already set up
+### 📋 Prerequisites
 
-### Step 1: Access Google Cloud Console
+Make sure you already have:
 
-1. Open your browser and go to [console.cloud.google.com](https://console.cloud.google.com/)
-2. Sign in with your Google account
+- Node.js installed.
+- An Express backend project.
+- JWT authentication already implemented.
+- A Google account.
 
-### Step 2: Create a New Project
+---
 
-1. Click the project dropdown at the top of the page (it says "Select a project")
-2. Click **"New Project"**
-3. Give it a name (e.g. `my-fashion-app`, or whatever your project is called)
-4. Click **"Create"** and wait a few seconds for it to finish
+### Step 1 — Open Google Cloud Console
 
-### Step 3: Set Up the OAuth Consent Screen
+1. Visit **Google Cloud Console**.
+2. Sign in with your Google account.
+3. Select an existing project or create a new one.
 
-This is the screen users see when they click "Continue with Google" — it shows what your app wants access to.
+> 💡 Every OAuth application belongs to a Google Cloud Project.
 
-1. In the left menu, go to **APIs & Services** → **OAuth consent screen**
-2. Choose **"External"** as the user type (since this isn't a Google Workspace org, this is the correct option for public users)
-3. Click **"Create"**
-4. Fill in the form:
-   - **App name**: your app's name (shown to users)
-   - **User support email**: select your email
-   - **Developer contact information**: enter your email
-5. Click **"Save and Continue"**
-6. On the next screen (Scopes), click **"Add or Remove Scopes"** and select:
-   - `.../auth/userinfo.email`
-   - `.../auth/userinfo.profile`
+---
 
-   This tells Google you only need the user's email and basic profile info — nothing more.
-7. Click **"Save and Continue"** through the remaining steps
+### Step 2 — Create a New Project
 
-### Step 4: Add Test Users
+1. Click **Select Project** at the top.
+2. Click **New Project**.
+3. Enter a project name.
 
-While the app is in "Testing" mode (not published/verified), only specific accounts can log in.
+Example:
 
-1. In the **"Test users"** section, add your own Google email (the one you'll test with)
-2. Click **"Save and Continue"**
+```text
+snitch-backend
+moodify-auth
+mern-google-oauth
+```
 
-> **Note:** To let any Google user log in, you'd need to "Publish" the app, and if you're using sensitive scopes, Google verification is required too. You can skip this for now during development.
+4. Click **Create**.
+5. Wait until Google creates the project.
 
-### Step 5: Create OAuth Client ID Credentials
+**Best Practice**
 
-Now generate the actual credentials (Client ID + Secret).
+Use one Google Cloud project per application instead of sharing one project across multiple apps.
 
-1. In the left menu, go to **APIs & Services** → **Credentials**
-2. Click **"Create Credentials"** → select **"OAuth client ID"**
-3. Choose **"Web application"** as the application type
-4. Give it a name (e.g. `Backend Web Client`)
-5. Under **"Authorized redirect URIs"**, click **"+ Add URI"** and add a URL matching your own backend's port and route path, for example: `http://localhost:5000/api/auth/google/callback`. This is not a fixed value — it must match whatever port and route path your actual Express backend uses.
-6. Click **"Create"**
+---
 
-A popup will show your **Client ID** and **Client Secret** — copy both and save them somewhere safe (you can always come back and view them again in the Console).
+### Step 3 — Configure OAuth Consent Screen
 
-### Step 6: Set Up `.env` in Your Project
+The OAuth Consent Screen is the page users see before granting permission.
 
-In your backend project's root, add this to `.env`:
+#### Choose User Type
 
-\`\`\`env
-GOOGLE_CLIENT_ID=your-google-client-id-here
-GOOGLE_CLIENT_SECRET=your-google-client-secret-here
-GOOGLE_REDIRECT_URI=http://localhost:5000/api/auth/google/callback
-CLIENT_URL=http://localhost:5173
-\`\`\`
+Select:
 
-**What each variable does:**
+- **External**
 
-| Variable | Purpose |
-|---|---|
-| `GOOGLE_CLIENT_ID` | Tells Google which app is making the request |
-| `GOOGLE_CLIENT_SECRET` | Verifies your app's identity — never expose this on the frontend, never commit it to GitHub |
-| `GOOGLE_REDIRECT_URI` | Google sends the user back here after login — must exactly match what you set in the Console |
-| `CLIENT_URL` | Your frontend URL — the backend uses this for the final redirect once the token is ready |
+Use **External** when anyone with a Google account should be able to sign in.
 
-### Step 7: Install Node.js Dependencies
+Choose **Internal** only for Google Workspace organizations.
 
-Your backend project (Express + JWT) is already set up, so you just need to add the OAuth-related packages.
+---
 
-**For Approach A (direct — google-auth-library):**
+#### Fill Application Information
 
-\`\`\`bash
-npm install google-auth-library
-\`\`\`
+| Field | Value |
+|-------|-------|
+| App Name | Your application name |
+| User Support Email | Your Gmail |
+| Developer Contact Email | Your Gmail |
 
-**For Approach B (Passport.js):**
+Example:
 
-\`\`\`bash
-npm install passport passport-google-oauth20
-\`\`\`
+```text
+App Name: Snitch
+Support Email: example@gmail.com
+Developer Email: example@gmail.com
+```
 
-> You don't need to install both right now — install whichever approach you decide to implement first. Both are covered in Part 2 and Part 3.
+Click **Save and Continue**.
 
-**What each package does:**
+---
 
-| Package | Purpose |
-|---|---|
-| `google-auth-library` | Google's official Node.js library — handles generating the consent URL, exchanging the auth code for tokens, and verifying the `id_token` |
-| `passport` | Core authentication middleware for Node.js — manages the overall auth flow via strategies |
-| `passport-google-oauth20` | The Google-specific strategy plugin for Passport — wraps the same OAuth flow with less manual code |
+### Step 4 — Add OAuth Scopes
+
+Click **Add or Remove Scopes**.
+
+Select only these scopes:
+
+```text
+userinfo.email
+userinfo.profile
+openid
+```
+
+#### Why these scopes?
+
+| Scope | Purpose |
+|--------|----------|
+| `userinfo.email` | Read user's email address. |
+| `userinfo.profile` | Read user's name and profile image. |
+| `openid` | Required for OpenID Connect identity verification (`id_token`). |
+
+> ✅ Request only the scopes you actually need.
+
+Click **Save and Continue**.
+
+---
+
+### Step 5 — Add Test Users
+
+Your application starts in **Testing Mode**.
+
+Only emails added here can log in.
+
+#### Add Test User
+
+1. Open **Test Users**.
+2. Click **Add Users**.
+3. Enter your Gmail.
+4. Save.
+
+Example:
+
+```text
+yourname@gmail.com
+```
+
+#### Testing vs Production
+
+| Testing | Production |
+|----------|------------|
+| Only added emails can login. | Any Google user can login. |
+| No Google verification needed. | Publishing may require verification for sensitive scopes. |
+
+For local development, **Testing Mode is enough**.
+
+---
+
+### Step 6 — Create OAuth Client ID
+
+Now create credentials.
+
+1. Open **APIs & Services → Credentials**.
+2. Click **Create Credentials**.
+3. Choose **OAuth Client ID**.
+4. Select **Web Application**.
+
+#### Give the Client a Name
+
+Example:
+
+```text
+Snitch Backend Client
+```
+
+---
+
+### Step 7 — Configure Authorized Redirect URI
+
+This is one of the most important steps.
+
+#### Local Development
+
+Add your backend callback endpoint.
+
+```text
+http://localhost:5000/api/auth/google/callback
+```
+
+If your backend uses another port:
+
+```text
+http://localhost:8000/api/auth/google/callback
+http://localhost:3000/api/auth/google/callback
+```
+
+The URI must match your backend exactly.
+
+#### What is Redirect URI?
+
+After Google authenticates the user, it sends the authorization code back to this URL.
+
+Example flow:
+
+```text
+Google Login
+      │
+      ▼
+User approves access
+      │
+      ▼
+GET /api/auth/google/callback?code=XYZ123
+```
+
+Your backend receives `code` from this endpoint.
+
+> ⚠️ Even a missing slash or wrong port causes authentication failure.
+
+---
+
+### Step 8 — Copy Client ID & Client Secret
+
+After clicking **Create**, Google shows:
+
+```env
+Client ID
+Client Secret
+```
+
+Copy both values immediately.
+
+Store them inside your backend `.env` file.
+
+> 🚨 Never expose `GOOGLE_CLIENT_SECRET` in frontend code or GitHub.
+
+---
+
+## ✅ Google Cloud Setup Checklist
+
+- [ ] Google Cloud Project created.
+- [ ] OAuth Consent Screen configured.
+- [ ] External user type selected.
+- [ ] Email, Profile and OpenID scopes added.
+- [ ] Test user added.
+- [ ] OAuth Client ID created.
+- [ ] Redirect URI added correctly.
+- [ ] Client ID copied.
+- [ ] Client Secret copied safely.
+
+---
 
 ## Part 2: Approach A — Direct (google-auth-library)
 
