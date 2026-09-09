@@ -253,7 +253,7 @@ Uses Google's official package directly — no abstraction, every step is explic
 
 ### Flow
 
-\`\`\`
+\`
 User clicks "Continue with Google"
    → GET /api/auth/google → backend redirects to Google's consent screen
    → user approves on Google's screen
@@ -262,13 +262,13 @@ User clicks "Continue with Google"
    → backend finds or creates the user in the database
    → backend issues its own JWT
    → backend redirects to the frontend with the token
-\`\`\`
+\`
 
 ### `config/googleClient.js`
 
 Sets up the Google OAuth2 client using your credentials from `.env`.
 
-\`\`\`js
+\`js
 import { OAuth2Client } from "google-auth-library";
 
 const googleClient = new OAuth2Client(
@@ -278,13 +278,13 @@ const googleClient = new OAuth2Client(
 );
 
 export default googleClient;
-\`\`\`
+\`
 
 ### `controllers/googleAuth.controller.js`
 
 Contains the two API functions — one to redirect the user to Google, one to handle Google's response.
 
-\`\`\`js
+\`js
 import googleClient from "../config/googleClient.js";
 import User from "../models/User.js";
 import { generateToken } from "../utils/token.js";
@@ -354,11 +354,11 @@ export const googleAuthCallback = async (req, res) => {
     res.redirect(\`${process.env.CLIENT_URL}/login?error=oauth_failed\`);
   }
 };
-\`\`\`
+\`
 
 ### `routes/googleAuth.routes.js`
 
-\`\`\`js
+\`js
 import express from "express";
 import { googleAuthRedirect, googleAuthCallback } from "../controllers/googleAuth.controller.js";
 
@@ -368,13 +368,13 @@ router.get("/auth/google", googleAuthRedirect);
 router.get("/auth/google/callback", googleAuthCallback);
 
 export default router;
-\`\`\`
+\`
 
 ### Frontend (this is all you need)
 
-\`\`\`html
+\`html
 <a href="http://localhost:5000/api/auth/google">Continue with Google</a>
-\`\`\`
+\`
 
 After the callback, the backend redirects to `/oauth-success?token=...`. On that route, save the token to localStorage/redux the same way you handle a normal login response.
 
@@ -394,9 +394,9 @@ Same end result as Approach A, but using the `passport-google-oauth20` strategy 
 
 ### Install
 
-\`\`\`bash
+\`bash
 npm install passport passport-google-oauth20
-\`\`\`
+\`
 
 ### Steps
 
@@ -406,7 +406,7 @@ npm install passport passport-google-oauth20
 
 ### `config/passport.js`
 
-\`\`\`js
+\`js
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import User from "../models/User.js";
@@ -448,20 +448,20 @@ passport.use(
 );
 
 export default passport;
-\`\`\`
+\`
 
 ### `app.js` (or `server.js`)
 
-\`\`\`js
+\`js
 import passport from "./config/passport.js";
 
 app.use(passport.initialize());
 // passport.session() is not needed — we're using JWT, not server-side sessions
-\`\`\`
+\`
 
 ### `controllers/googleAuth.controller.js`
 
-\`\`\`js
+\`js
 import { generateToken } from "../utils/token.js";
 
 // runs after the callback route — req.user was already set by Passport
@@ -476,11 +476,11 @@ export const googleAuthSuccess = (req, res) => {
 
   res.redirect(\`${process.env.CLIENT_URL}/oauth-success?token=${token}\`);
 };
-\`\`\`
+\`
 
 ### `routes/googleAuth.routes.js`
 
-\`\`\`js
+\`js
 import express from "express";
 import passport from "passport";
 import { googleAuthSuccess } from "../controllers/googleAuth.controller.js";
@@ -504,7 +504,7 @@ router.get(
 );
 
 export default router;
-\`\`\`
+\`
 
 ### How This Works — Function by Function
 
@@ -518,11 +518,11 @@ export default router;
 
 Both Approach A and Approach B rely on the same two extra fields in your `User` model:
 
-\`\`\`js
+\`js
 googleId: { type: String },
 authProvider: { type: String, enum: ["local", "google"], default: "local" },
 avatar: { type: String },
-\`\`\`
+\`
 
 > **Note:** Your `password` field needs to become conditional (only `required: true` when `authProvider === "local"`), since a Google-signed-up user has no password.
 
@@ -536,11 +536,11 @@ avatar: { type: String },
 
 ## Part 5: .env Reference
 
-\`\`\`env
+\`env
 GOOGLE_CLIENT_ID=your-google-client-id-here
 GOOGLE_CLIENT_SECRET=your-google-client-secret-here
 GOOGLE_REDIRECT_URI=http://localhost:5000/api/auth/google/callback
 CLIENT_URL=http://localhost:5173
-\`\`\`
+\`
 
 These four variables cover both Approach A and Approach B — no extra `.env` values needed for either one.
